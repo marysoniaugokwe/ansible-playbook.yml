@@ -1,0 +1,64 @@
+---
+- name: Deploy Kubernetes Resources
+  hosts: localhost
+  tasks:
+    - name: Create a Kubernetes namespace
+      k8s:
+        api_version: v1
+        kind: Namespace
+        name: test_namespace
+      become: yes
+
+    - name: Create a ConfigMap
+      k8s:
+        api_version: v1
+        kind: ConfigMap
+        name: app-config
+        namespace: test_namespace
+        data:
+          env: test
+          
+
+    - name: Create a Secret
+      k8s:
+        api_version: v1
+        kind: Secret
+        name: app-secret
+        namespace: test_namespace
+        data:
+          api_key: base64_encoded_api_key
+
+    - name: Deploy StatefulSet
+      k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: StatefulSet
+          metadata:
+            name: stateful-app
+            namespace: your_namespace_name
+          spec:
+            replicas: 3
+            selector:
+              matchLabels:
+                app: stateful-app
+            template:
+              metadata:
+                labels:
+                  app: stateful-app
+              spec:
+                containers:
+                - name: frontend
+                  image: nginx
+                  ports:
+                  - containerPort: 8080
+            volumeClaimTemplates:
+            - metadata:
+                name: storage
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 1Gi
+
+...
